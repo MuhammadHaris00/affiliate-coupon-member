@@ -2,8 +2,10 @@
 /**
  * Plugin Name: Affiliate Coupon Member
  * Description: Adds affiliate partners who can see coupon usage statistics for their assigned coupons.
- * Version: 1.1
+ * Version: 1.2
  * Author: Muhammad Haris
+  * Text Domain:       affiliate_coupon_member
+  * Domain Path:       /languages
  */
 
 // Prevent direct access
@@ -160,6 +162,10 @@ function acd_affiliate_coupons_page() {
         ));
 
         foreach ($orders as $order) {
+        // Skip COD orders
+            if ($order->get_payment_method() === 'cod') {
+                continue;
+            }
             $used_coupons = $order->get_coupon_codes();
             if (in_array($coupon_code, $used_coupons, true)) {
                 $total_sales += floatval($order->get_total());
