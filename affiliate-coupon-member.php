@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Affiliate Coupon Member
  * Description: Adds affiliate partners who can see coupon usage statistics for their assigned coupons.
- * Version: 1.2
+ * Version: 1.3
  * Author: Muhammad Haris
   * Text Domain:       affiliate_coupon_member
   * Domain Path:       /languages
@@ -77,6 +77,78 @@ function acd_save_affiliate_meta($post_id, $post) {
     }
 }
 add_action('save_post_shop_coupon', 'acd_save_affiliate_meta', 10, 2);
+
+function acd_add_cod_check() {
+    global $post;
+
+    if ( $post->post_type !== 'shop_coupon' ) {
+        return;
+    }
+
+    // Load saved value
+    $cod_usage = get_post_meta( $post->ID, '_cod_usage', true );
+
+    echo '<div class="options_group">';
+    echo '<p class="form-field">
+            <label for="cod_usage">Use Coupon on Cash on Delivery (COD): </label>
+            <input type="checkbox" name="cod_usage" id="cod_usage" value="yes" ' . checked( $cod_usage, 'yes', false ) . ' />
+          </p>';
+    echo '</div>';
+}
+add_action( 'woocommerce_coupon_options', 'acd_add_cod_check' );
+
+
+/**
+ * Save COD Usage Option when coupon is saved
+ */
+
+function acd_save_cod_check( $post_id, $post ) {
+
+    if ( $post->post_type !== 'shop_coupon' ) {
+        return;
+    }
+
+    if ( isset( $_POST['cod_usage'] ) ) {
+        update_post_meta( $post_id, '_cod_usage', 'yes' );
+    } else {
+        delete_post_meta( $post_id, '_cod_usage' );
+    }
+}
+add_action( 'woocommerce_coupon_options_save', 'acd_save_cod_check', 10, 2 );
+
+/**
+ * Disable coupon usage on COD unless explicitly allowed.
+ */
+add_filter('woocommerce_coupon_is_valid', 'acd_disallow_coupon_on_cod', 10, 3);
+function acd_disallow_coupon_on_cod( $valid, $coupon, $discount ) {
+
+    // Get selected payment method
+    $chosen_payment = WC()->session->get('chosen_payment_method');
+
+    // If not COD — allow coupon
+    if ($chosen_payment !== 'cod') {
+        return $valid;
+    }
+
+    // Check the coupon setting
+    $cod_allowed = get_post_meta( $coupon->get_id(), '_cod_usage', true );
+
+    // If coupon is NOT allowed on COD → block it
+    if ($cod_allowed !== 'yes') {
+        wc_add_notice(
+            __('This coupon cannot be used with Cash on Delivery.', 'woocommerce'),
+            'error'
+        );
+        return false;
+    }
+
+    return $valid;
+}
+
+add_action('woocommerce_checkout_update_order_review', function() {
+    wc()->cart->calculate_totals();
+});
+
 
 /**
  * 5. Add “My Coupons” page for Affiliate Partners
