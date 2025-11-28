@@ -149,6 +149,26 @@ add_action('woocommerce_checkout_update_order_review', function() {
     wc()->cart->calculate_totals();
 });
 
+/**
+ * Revalidate coupons immediately when payment method changes
+ */
+add_action('woocommerce_checkout_after_customer_details', function () {
+    ?>
+    <script type="text/javascript">
+        jQuery(function($) {
+
+            // When payment method changes, re-run validation
+            $(document.body).on('change', 'input[name="payment_method"]', function() {
+
+                // Trigger WooCommerce to re-run backend validations
+                $(document.body).trigger('update_checkout');
+            });
+
+        });
+    </script>
+    <?php
+});
+
 
 /**
  * 5. Add “My Coupons” page for Affiliate Partners
