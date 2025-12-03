@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Affiliate Coupon Member
  * Description: Adds affiliate partners who can see coupon usage statistics for their assigned coupons.
- * Version: 1.3
+ * Version: 1.5
  * Author: Muhammad Haris
   * Text Domain:       affiliate_coupon_member
   * Domain Path:       /languages
@@ -157,17 +157,31 @@ add_action('woocommerce_checkout_after_customer_details', function () {
     <script type="text/javascript">
         jQuery(function($) {
 
-            // When payment method changes, re-run validation
+            // Re-run validation when payment method changes
             $(document.body).on('change', 'input[name="payment_method"]', function() {
-
-                // Trigger WooCommerce to re-run backend validations
                 $(document.body).trigger('update_checkout');
+            });
+
+            // When checkout is updated (after validation), check for errors and scroll
+            $(document.body).on('checkout_error updated_checkout', function() {
+
+                let $errorBox = $('.woocommerce-error');
+
+                if ($errorBox.length) {
+                    // Small delay ensures DOM is updated before scrolling
+                    setTimeout(function() {
+                        $('html, body').animate({
+                            scrollTop: $errorBox.offset().top - 40
+                        }, 400);
+                    }, 200);
+                }
             });
 
         });
     </script>
     <?php
 });
+
 
 
 /**
